@@ -8,7 +8,7 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --force
 
 # Copy the rest of the application code
 COPY . .
@@ -20,8 +20,8 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Expose port 3300
-EXPOSE 3300
+# Expose port 3002
+EXPOSE 3002
 
 # Start nginx
 CMD ["nginx", "-g", "daemon off;"]

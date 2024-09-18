@@ -2,13 +2,13 @@ import {
   Injectable,
   BadRequestException,
   InternalServerErrorException,
-} from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
+} from "@nestjs/common";
+import { HttpService } from "@nestjs/axios";
 import { InfluxDBService } from "../common/influxdb.service";
-import { ConvertCurrencyInput } from './dto/convert-currency.input';
-import { firstValueFrom } from 'rxjs';
-import NodeCache from 'node-cache';
-import { ConfigService } from '@nestjs/config';
+import { ConvertCurrencyInput } from "./dto/convert-currency.input";
+import { firstValueFrom } from "rxjs";
+import NodeCache from "node-cache";
+import { ConfigService } from "@nestjs/config";
 import { CurrencyConversionResponse } from "./dto/convert-currency.serviceresponce";
 
 @Injectable()
@@ -26,15 +26,27 @@ export class CurrencyService {
   async convertCurrency(input: ConvertCurrencyInput): Promise<string> {
     const { sourceCurrency, targetCurrency, amount } = input;
 
-    if(sourceCurrency.length !== 3 || targetCurrency.length !== 3 || amount <= 0){
-        throw new BadRequestException('Invalid Input Data');
+    if (amount <= 0) {
+      throw new BadRequestException("Amount number can't be less or equal 0");
+    }
+
+    if (
+      sourceCurrency.length !== 3 ||
+      targetCurrency.length !== 3 ||
+      amount <= 0
+    ) {
+      throw new BadRequestException("Invalid Input Data");
     }
     const supportedCurrencies = await this.getSupportedCurrencies();
     if (
-      !supportedCurrencies.find((opt: any) => opt.base_currency.toUpperCase()) ||
-      !supportedCurrencies.find((opt: any) => opt.quote_currency.toUpperCase())
+      !supportedCurrencies.find(
+        (opt: any) => opt.quote_currency.toUpperCase() === sourceCurrency,
+      ) ||
+      !supportedCurrencies.find(
+        (opt: any) => opt.quote_currency.toUpperCase() === targetCurrency,
+      )
     ) {
-      throw new BadRequestException('Unsupported currency code.');
+      throw new BadRequestException("Unsupported currency code.");
     }
 
     // Get exchange rate
@@ -47,8 +59,8 @@ export class CurrencyService {
     const convertedAmount = exchangeRate * amount;
 
     // Format the result using Intl.NumberFormat
-    const formattedAmount = new Intl.NumberFormat('en-US', {
-      style: 'currency',
+    const formattedAmount = new Intl.NumberFormat("en-US", {
+      style: "currency",
       currency: targetCurrency.toUpperCase(),
     }).format(convertedAmount);
 
@@ -68,7 +80,7 @@ export class CurrencyService {
 
     try {
       const response = await firstValueFrom(
-        this.httpService.get('https://swop.cx/rest/rates', {
+        this.httpService.get("https://swop.cx/rest/rates", {
           params: {
             "api-key": this.configService.get("SWOP_API_KEY"),
           },
